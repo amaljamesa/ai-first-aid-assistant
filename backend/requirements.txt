@@ -1,0 +1,40 @@
+# LIFELINE AI - Backend Dependencies
+
+# FastAPI and server
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# Pydantic for data validation
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# AI/LLM Integration
+openai==1.54.3
+
+# Audio processing (optional, for voice)
+# librosa==0.10.2
+# soundfile==0.12.1
+
+# Image processing (optional, for image analysis)
+# Pillow==10.4.0
+# opencv-python==4.10.0.84
+
+# HTTP client
+httpx==0.27.2
+
+# Environment and configuration
+python-dotenv==1.0.1
+
+# Logging
+python-json-logger==2.0.7
+
+# CORS
+# (included in FastAPI)
+
+# Development dependencies (optional)
+# pytest==8.3.3
+# pytest-asyncio==0.24.0
+# black==24.8.0
+# flake8==7.1.1
+# mypy==1.11.1
