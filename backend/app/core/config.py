@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     DEFAULT_HOSPITAL_RADIUS: float = float(os.getenv("DEFAULT_HOSPITAL_RADIUS", "10"))
     MAX_HOSPITAL_RESULTS: int = int(os.getenv("MAX_HOSPITAL_RESULTS", "10"))
 
+    # Google Places API
+    GOOGLE_PLACES_API_KEY: str = os.getenv("GOOGLE_PLACES_API_KEY", "")
+    GOOGLE_PLACES_ENABLED: bool = os.getenv("GOOGLE_PLACES_ENABLED", "True").lower() == "true"
+
     # Voice Processing
     MAX_AUDIO_DURATION: int = int(os.getenv("MAX_AUDIO_DURATION", "60"))  # seconds
     SUPPORTED_AUDIO_FORMATS: List[str] = ["wav", "mp3", "m4a", "flac"]

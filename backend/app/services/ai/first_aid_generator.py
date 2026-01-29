@@ -115,98 +115,32 @@ Respond in JSON format with an array of instructions:
     ) -> List[Dict[str, Any]]:
         """Generate instructions from templates"""
         templates = {
-            "cardiac": [
+            "cuts-wounds": [
                 {
-                    "title": "Call Emergency Services",
-                    "description": "Immediately call 911 or your local emergency number. This is a medical emergency.",
-                    "duration": 0,
-                },
-                {
-                    "title": "Check Responsiveness",
-                    "description": "Check if the person is conscious and responsive. Gently shake their shoulders and ask if they're okay.",
-                    "duration": 10,
-                },
-                {
-                    "title": "Start CPR if Needed",
-                    "description": "If the person is unresponsive and not breathing, begin CPR. Place hands on center of chest and push hard and fast (100-120 compressions per minute).",
-                    "duration": 120,
-                },
-                {
-                    "title": "Use AED if Available",
-                    "description": "If an Automated External Defibrillator (AED) is available, follow its instructions immediately.",
-                    "duration": 60,
-                },
-            ],
-            "respiratory": [
-                {
-                    "title": "Assess Breathing",
-                    "description": "Check if the person is breathing. Look for chest movement and listen for breath sounds.",
-                    "duration": 10,
-                },
-                {
-                    "title": "Clear Airway",
-                    "description": "If the person is choking, perform the Heimlich maneuver. Stand behind them, place hands above navel, and give quick upward thrusts.",
-                    "duration": 30,
-                },
-                {
-                    "title": "Call Emergency Services",
-                    "description": "If breathing doesn't improve, call 911 immediately.",
-                    "duration": 0,
-                },
-                {
-                    "title": "Monitor Condition",
-                    "description": "Continue monitoring breathing and consciousness until help arrives.",
-                    "duration": 0,
-                },
-            ],
-            "bleeding": [
-                {
-                    "title": "Apply Direct Pressure",
-                    "description": "Use a clean cloth or bandage to apply firm, direct pressure to the wound.",
+                    "title": "Stop the Bleeding",
+                    "description": "Apply direct pressure to the wound with a clean cloth or bandage. Press firmly and continuously.",
                     "duration": 300,
                 },
                 {
-                    "title": "Elevate the Injury",
-                    "description": "If possible, raise the injured area above the level of the heart to reduce blood flow.",
-                    "duration": 0,
+                    "title": "Clean the Wound",
+                    "description": "Once bleeding stops, gently clean the wound with clean water. Remove any visible debris.",
+                    "duration": 120,
                 },
                 {
-                    "title": "Call Emergency Services",
-                    "description": "If bleeding is severe or doesn't stop, call 911 immediately.",
-                    "duration": 0,
+                    "title": "Apply Bandage",
+                    "description": "Cover the wound with a sterile bandage or clean cloth. Secure with tape or wrap.",
+                    "duration": 60,
                 },
                 {
-                    "title": "Keep Pressure Until Help Arrives",
-                    "description": "Continue applying pressure. Do not remove the bandage even if it becomes soaked with blood.",
-                    "duration": 0,
-                },
-            ],
-            "fracture": [
-                {
-                    "title": "Immobilize the Injury",
-                    "description": "Keep the injured area still. Do not try to realign bones or push a bone back in.",
-                    "duration": 0,
-                },
-                {
-                    "title": "Apply Ice",
-                    "description": "Apply a cold pack or ice wrapped in cloth to reduce swelling and pain.",
-                    "duration": 600,
-                },
-                {
-                    "title": "Seek Medical Attention",
-                    "description": "Go to the emergency room or call 911 if the fracture is severe or the person cannot move.",
-                    "duration": 0,
-                },
-                {
-                    "title": "Monitor for Shock",
-                    "description": "Watch for signs of shock: pale skin, rapid pulse, dizziness. Keep the person calm and lying down.",
+                    "title": "Monitor for Infection",
+                    "description": "Watch for signs of infection: increased pain, redness, swelling, or pus. Seek medical attention if needed.",
                     "duration": 0,
                 },
             ],
-            "burn": [
+            "burns": [
                 {
                     "title": "Cool the Burn",
-                    "description": "Hold the burned area under cool (not cold) running water for 10-20 minutes, or apply a cool, wet compress.",
+                    "description": "Hold the burned area under cool (not cold) running water for 10-20 minutes.",
                     "duration": 1200,
                 },
                 {
@@ -216,12 +150,144 @@ Respond in JSON format with an array of instructions:
                 },
                 {
                     "title": "Cover the Burn",
-                    "description": "Cover the burn with a sterile, non-adhesive bandage or clean cloth.",
-                    "duration": 0,
+                    "description": "Cover with a sterile, non-adhesive bandage or clean cloth. Do not use ice or butter.",
+                    "duration": 60,
                 },
                 {
                     "title": "Seek Medical Attention",
-                    "description": "Call 911 for severe burns, or seek medical attention if the burn is larger than 3 inches or affects face, hands, or joints.",
+                    "description": "For severe burns or burns larger than 3 inches, call emergency services immediately.",
+                    "duration": 0,
+                },
+            ],
+            "choking": [
+                {
+                    "title": "Encourage Coughing",
+                    "description": "If the person can cough, encourage them to keep coughing to try to clear the blockage.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Back Blows",
+                    "description": "Stand behind the person, lean them forward, and give 5 sharp back blows between the shoulder blades.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Abdominal Thrusts",
+                    "description": "Stand behind the person, place hands above navel, and give 5 quick upward thrusts.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Call Emergency Services",
+                    "description": "If the blockage doesn't clear, call 911 immediately and continue alternating back blows and thrusts.",
+                    "duration": 0,
+                },
+            ],
+            "cpr": [
+                {
+                    "title": "Check Responsiveness",
+                    "description": "Tap the person's shoulders and shout 'Are you okay?' Check for normal breathing.",
+                    "duration": 10,
+                },
+                {
+                    "title": "Call for Help",
+                    "description": "Call 911 immediately. Ask someone to find an AED if available.",
+                    "duration": 0,
+                },
+                {
+                    "title": "Position Hands",
+                    "description": "Place heel of one hand on center of chest between nipples. Place other hand on top, interlacing fingers.",
+                    "duration": 15,
+                },
+                {
+                    "title": "Start Compressions",
+                    "description": "Push hard and fast at least 2 inches deep at 100-120 compressions per minute. Let chest recoil completely.",
+                    "duration": 120,
+                },
+            ],
+            "sprains": [
+                {
+                    "title": "Rest the Injury",
+                    "description": "Stop activity and rest the injured area. Avoid putting weight on it.",
+                    "duration": 0,
+                },
+                {
+                    "title": "Apply Ice",
+                    "description": "Apply ice wrapped in a cloth for 15-20 minutes every 2-3 hours for the first 48 hours.",
+                    "duration": 1200,
+                },
+                {
+                    "title": "Compress the Area",
+                    "description": "Wrap with an elastic bandage, not too tight. You should be able to slip a finger under it.",
+                    "duration": 120,
+                },
+                {
+                    "title": "Elevate if Possible",
+                    "description": "Raise the injured area above heart level when resting to reduce swelling.",
+                    "duration": 0,
+                },
+            ],
+            "nosebleed": [
+                {
+                    "title": "Sit and Lean Forward",
+                    "description": "Sit upright and lean slightly forward to prevent blood from running down the throat.",
+                    "duration": 0,
+                },
+                {
+                    "title": "Pinch the Nose",
+                    "description": "Pinch the soft part of the nose (not the bridge) firmly for 10-15 minutes continuously.",
+                    "duration": 900,
+                },
+                {
+                    "title": "Apply Cold Compress",
+                    "description": "Apply a cold compress or ice pack to the bridge of the nose while pinching.",
+                    "duration": 900,
+                },
+                {
+                    "title": "Seek Help if Needed",
+                    "description": "If bleeding doesn't stop after 20 minutes or if caused by injury, seek medical attention.",
+                    "duration": 0,
+                },
+            ],
+            "allergic-reaction": [
+                {
+                    "title": "Remove the Trigger",
+                    "description": "If possible, remove or avoid the allergen that caused the reaction.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Use Antihistamine",
+                    "description": "Give an antihistamine like Benadryl if available and the person is conscious.",
+                    "duration": 60,
+                },
+                {
+                    "title": "Watch for Severe Symptoms",
+                    "description": "Monitor for difficulty breathing, swelling of face/throat, or rapid pulse.",
+                    "duration": 0,
+                },
+                {
+                    "title": "Call Emergency Services",
+                    "description": "If symptoms are severe or person has an EpiPen, use it and call 911 immediately.",
+                    "duration": 0,
+                },
+            ],
+            "fainting": [
+                {
+                    "title": "Lay Person Down",
+                    "description": "Help the person lie down on their back. If not possible, help them sit with head between knees.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Elevate Legs",
+                    "description": "Raise the person's legs 8-12 inches above heart level to improve blood flow to the brain.",
+                    "duration": 0,
+                },
+                {
+                    "title": "Loosen Tight Clothing",
+                    "description": "Loosen belts, collars, or any tight clothing around the neck and waist.",
+                    "duration": 30,
+                },
+                {
+                    "title": "Monitor and Reassure",
+                    "description": "Stay with the person, check breathing, and provide reassurance when they regain consciousness.",
                     "duration": 0,
                 },
             ],
@@ -231,11 +297,11 @@ Respond in JSON format with an array of instructions:
         instructions = templates.get(emergency_type, [
             {
                 "title": "Assess the Situation",
-                "description": "Carefully assess the emergency situation and ensure your own safety first.",
+                "description": "Carefully assess the situation and ensure your own safety first.",
                 "duration": 30,
             },
             {
-                "title": "Call Emergency Services",
+                "title": "Call for Help",
                 "description": "Call 911 or your local emergency number if the situation is serious.",
                 "duration": 0,
             },

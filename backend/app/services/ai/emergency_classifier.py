@@ -5,9 +5,11 @@ AI-powered emergency type classification
 
 from typing import Dict, Any
 import logging
+import json
 
 from app.core.config import settings
 from app.models.schemas import EmergencyType
+from app.services.ai.custom_classifier import CustomEmergencyClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,7 @@ class EmergencyClassifier:
     def __init__(self):
         self.ai_enabled = settings.AI_ENABLED
         self.openai_key = settings.OPENAI_API_KEY
+        self.custom_classifier = CustomEmergencyClassifier()
         
     async def classify(
         self,
@@ -26,23 +29,18 @@ class EmergencyClassifier:
     ) -> Dict[str, Any]:
         """
         Classify emergency type from input
-        
-        Args:
-            input_type: Type of input (text, voice, image)
-            content: Input content
-            
-        Returns:
-            Dictionary with 'type' and 'confidence' keys
         """
         try:
-            if self.ai_enabled and self.openai_key:
+            # Try custom model first
+            if self.custom_classifier.is_available():
+                return self.custom_classifier.classify(content)
+            elif self.ai_enabled and self.openai_key:
                 return await self._classify_with_ai(content)
             else:
                 return await self._classify_with_rules(content)
                 
         except Exception as e:
             logger.error(f"Classification error: {str(e)}")
-            # Fallback to rule-based classification
             return await self._classify_with_rules(content)
     
     async def _classify_with_ai(self, content: str) -> Dict[str, Any]:
@@ -52,53 +50,52 @@ class EmergencyClassifier:
             
             client = OpenAI(api_key=self.openai_key)
             
-            prompt = f"""Analyze the following emergency situation and classify it into one of these categories:
-- medical: General medical emergencies (fever, pain, illness)
-- trauma: Physical injuries (cuts, bruises, impacts)
-- cardiac: Heart-related emergencies (chest pain, heart attack)
-- respiratory: Breathing problems (choking, asthma, difficulty breathing)
-- burn: Burns and scalds
-- poisoning: Poisoning or toxic exposure
-- fracture: Broken bones
-- bleeding: Severe bleeding or wounds
-- unknown: Cannot determine
+            prompt = f"""
+Analyze the following emergency situation and classify it into one of these categories:
+- medical
+- trauma
+- cardiac
+- respiratory
+- burn
+- poisoning
+- fracture
+- bleeding
+- unknown
 
 Emergency description: {content}
 
-Respond in JSON format:
+Respond ONLY in JSON:
 {{
     "type": "category_name",
-    "confidence": 0.0-1.0,
-    "reasoning": "brief explanation"
-}}"""
+    "confidence": 0.0,
+    "reasoning": "short explanation"
+}}
+"""
             
             response = client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[
-                    {"role": "system", "content": "You are an emergency medical classification AI. Analyze emergency situations and classify them accurately."},
+                    {"role": "system", "content": "You are an emergency medical classification AI."},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3,
+                temperature=0.2,
             )
             
-            import json
             result = json.loads(response.choices[0].message.content)
-            
-            # Validate and normalize result
+
+            # Normalize + validate
             emergency_type = result.get("type", "unknown").lower()
             if emergency_type not in [e.value for e in EmergencyType]:
                 emergency_type = "unknown"
-            
-           return {
-    "type": result.get("type", "unknown"),
-    "severity": result.get("severity", "unknown"),
-    "instructions": result.get("instructions", []),
-    "call_emergency": result.get("call_emergency", False),
-    "confidence": float(result.get("confidence", 0.7)),
-}
 
-            
+            return {
+                "type": emergency_type,
+                "confidence": float(result.get("confidence", 0.7)),
+                "reasoning": result.get("reasoning", "AI classification"),
+                "source": "ai"
+            }
+
         except Exception as e:
             logger.warning(f"AI classification failed: {str(e)}, falling back to rules")
             return await self._classify_with_rules(content)
@@ -107,16 +104,15 @@ Respond in JSON format:
         """Rule-based classification fallback"""
         content_lower = content.lower()
         
-        # Keyword-based classification
         keywords = {
-            "cardiac": ["chest pain", "heart", "cardiac", "heart attack", "cardiac arrest", "palpitations"],
-            "respiratory": ["breathing", "choke", "asthma", "shortness of breath", "can't breathe", "suffocating"],
-            "bleeding": ["bleeding", "blood", "cut", "wound", "hemorrhage", "laceration"],
-            "fracture": ["broken", "fracture", "bone", "dislocated", "sprain"],
-            "burn": ["burn", "scald", "fire", "hot", "thermal"],
-            "poisoning": ["poison", "toxic", "overdose", "ingested", "chemical"],
-            "trauma": ["injury", "hurt", "accident", "fall", "hit", "struck"],
-            "medical": ["fever", "pain", "sick", "ill", "nausea", "dizzy", "unconscious"],
+            "cuts-wounds": ["cut", "wound", "bleeding", "blood", "gash", "laceration", "scrape"],
+            "burns": ["burn", "scald", "fire", "hot", "steam", "chemical burn"],
+            "choking": ["choking", "can't breathe", "swallowed", "stuck in throat", "gagging"],
+            "cpr": ["unconscious", "not breathing", "no pulse", "cardiac arrest", "collapsed"],
+            "sprains": ["sprain", "twisted", "ankle", "wrist", "swollen", "can't move"],
+            "nosebleed": ["nosebleed", "nose bleeding", "bloody nose"],
+            "allergic-reaction": ["allergic", "rash", "hives", "swelling", "itchy", "reaction"],
+            "fainting": ["fainted", "dizzy", "lightheaded", "passed out", "unconscious"],
         }
         
         scores = {}
@@ -126,15 +122,15 @@ Respond in JSON format:
                 scores[emergency_type] = score
         
         if scores:
-            # Get type with highest score
             emergency_type = max(scores, key=scores.get)
             confidence = min(0.9, 0.5 + (scores[emergency_type] * 0.1))
         else:
-            emergency_type = "unknown"
+            emergency_type = "cuts-wounds"  # Default to basic first aid
             confidence = 0.3
         
         return {
             "type": emergency_type,
             "confidence": confidence,
             "reasoning": "Rule-based classification",
+            "source": "rules"
         }

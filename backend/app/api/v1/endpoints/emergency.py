@@ -23,6 +23,94 @@ from app.core.config import settings
 router = APIRouter()
 
 
+@router.post("/analyze", response_model=ApiResponse)
+async def analyze_emergency(request: EmergencyRequest) -> Dict[str, Any]:
+    """
+    Analyze emergency input and provide complete response with instructions
+    
+    - **input**: Emergency input (text, voice, or image)
+    - **userId**: Optional user identifier
+    - **sessionId**: Optional session identifier
+    """
+    try:
+        # Initialize services
+        classifier = EmergencyClassifier()
+        scorer = SeverityScorer()
+        
+        # Classify emergency
+        classification_result = await classifier.classify(
+            input_type=request.input.type,
+            content=request.input.content
+        )
+        
+        # Score severity
+        severity_result = await scorer.score(
+            emergency_type=classification_result["type"],
+            content=request.input.content,
+            classification_confidence=classification_result["confidence"]
+        )
+        
+        # Determine if emergency call is needed
+        should_call = (
+            severity_result["severity"] == "critical" or
+            severity_result["score"] >= settings.CRITICAL_SEVERITY_THRESHOLD
+        )
+        
+        # Get first aid instructions
+        first_aid_service = FirstAidGenerator()
+        instructions = await first_aid_service.generate_instructions(
+            emergency_type=classification_result["type"],
+            severity=severity_result["severity"]
+        )
+        
+        # Find nearest hospital if location provided
+        nearest_hospital = None
+        if request.input.location:
+            hospital_finder = HospitalFinder()
+            hospitals = await hospital_finder.find_nearby(
+                location=request.input.location,
+                radius=settings.DEFAULT_HOSPITAL_RADIUS
+            )
+            if hospitals:
+                nearest_hospital = hospitals[0]
+        
+        # Build detection object
+        detection = EmergencyDetection(
+            emergencyType=classification_result["type"],
+            severity=severity_result["severity"],
+            confidence=classification_result["confidence"],
+            detectedAt=datetime.now(),
+        )
+        
+        # Build response
+        response_data = EmergencyResponse(
+            detection=detection,
+            instructions=[FirstAidInstruction(**inst) for inst in instructions],
+            shouldCallEmergency=should_call,
+            nearestHospital=nearest_hospital,
+            estimatedResponseTime=15 if should_call else None,
+        )
+        
+        return {
+            "success": True,
+            "data": response_data.dict(),
+            "timestamp": datetime.now().isoformat(),
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ANALYSIS_ERROR",
+                    "message": str(e),
+                },
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+
+
 @router.post("/detect", response_model=ApiResponse)
 async def detect_emergency(request: EmergencyRequest) -> Dict[str, Any]:
     """
